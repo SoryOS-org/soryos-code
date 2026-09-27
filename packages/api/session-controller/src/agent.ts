@@ -477,10 +477,17 @@ export class ApiSessionAgentController {
       }
     }
 
-    try {
-      await mkdir(cwd, { recursive: true })
-    } catch (error: unknown) {
-      throw new Error(`failed to ensure project directory "${cwd}": ${String(error)}`, { cause: error })
+    // Gap #2 (Phase 7) : mkdir conditionnel. Si E2B est actif, le cwd est dans
+    // le sandbox distant ; le répertoire n'est pas créé sur l'hôte (le workspace
+    // E2B est initialisé par `e2b.initWorkspace` séparément, ou via le preset).
+    const e2b = this.ctx.get('e2b') as unknown
+    const useE2b = e2b && typeof e2b === 'object' && 'workspace' in e2b
+    if (!useE2b) {
+      try {
+        await mkdir(cwd, { recursive: true })
+      } catch (error: unknown) {
+        throw new Error(`failed to ensure project directory "${cwd}": ${String(error)}`, { cause: error })
+      }
     }
     const composition = await this.composeAgent(presetId)
     return (await this.ctx.agents.create({

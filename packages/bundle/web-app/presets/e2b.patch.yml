@@ -1,0 +1,40 @@
+# Agent preset E2B : remote sandbox providers isolated in one group.
+# Applied after the web patch; the session selects this preset via agent-preset.
+- insert:
+    - id: preset-e2b
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: e2b
+        name: E2B Remote Sandbox
+        description: Execute inside an isolated E2B sandbox with remote filesystem, subprocess, and sandbox lifecycle.
+        order: 10
+        plugins:
+          # E2B lifecycle owner.
+          - id: e2b
+            name: '@deepseek-ai/dsh-e2b'
+            config:
+              workspace: '/home/user'
+          # Remote filesystem over the sandbox workspace.
+          - id: fs-e2b
+            name: '@deepseek-ai/dsh-fs-e2b'
+          # Remote subprocess/terminal over the sandbox.
+          - id: subprocess-e2b
+            name: '@deepseek-ai/dsh-subprocess-e2b'
+          # Shell executor routed through the remote subprocess provider.
+          - id: bash-local
+            name: '@deepseek-ai/dsh-bash-local'
+          # Terminal backend routed through the remote subprocess provider.
+          - id: terminal-bash
+            name: '@deepseek-ai/dsh-terminal-bash'
+          # Sandbox policy aware of the remote workspace root.
+          - id: sandbox-policy
+            name: '@deepseek-ai/dsh-sandbox-policy'
+          # Sandbox confinement (local runner; isolation is the VM boundary).
+          - id: sandbox-local
+            name: '@deepseek-ai/dsh-sandbox-local'
+          # Isolated group: E2B providers together (remote workspace boundary).
+          - id: e2b-group
+            name: cordis:group
+            group: true
+            isolate:
+              workspace: true
