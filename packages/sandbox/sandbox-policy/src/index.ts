@@ -128,7 +128,9 @@ export class SandboxPolicyService extends Service {
     // runtime fact. `workspaceRoot` has NO schema default, so its fallback to
     // the process cwd is real branching, resolved absolute either way.
     this.defaultMode = config.mode as SandboxMode
-    this.workspaceRoot = resolveWorkspaceRoot(config.workspaceRoot ?? process.cwd())
+    const e2b = ctx.get('e2b') as unknown
+    const e2bWorkspace = e2b && typeof e2b === 'object' && 'workspace' in e2b ? (e2b as { workspace: string }).workspace : undefined
+    this.workspaceRoot = resolveWorkspaceRoot(e2bWorkspace ?? config.workspaceRoot ?? process.cwd())
 
     ctx.sessionProjections.register({
       key: 'sandboxMode',
