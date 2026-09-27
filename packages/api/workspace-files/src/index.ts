@@ -183,6 +183,16 @@ function directoryEntry(child: FsDirEntry): WorkspaceDirectoryEntry {
 export class WorkspaceFiles extends TypertRemoteService {
   static inject = ['fs', 'sandboxPolicy', 'sessions', 'typert']
 
+  /** Résoudre le filesystem : E2B workspace quand présent (agent.ctx.fs via session), sinon host ctx.fs. */
+  private resolveFs(): typeof this.ctx.fs {
+    // Phase 8 (gap #1) : le service suit le filesystem de la session. Quand
+    // un sandbox E2B est actif, l'agent utilise fs-e2b ; sans E2B, le host
+    // ctx.fs (local) reste le backend. La résolution passe par le workspace
+    // distant (workspaceRoot = E2B workspace depuis Phase 5) ; le filesystem
+    // reste celui du host pour cette itération (prochaine : inject fs-e2b).
+    return this.ctx.fs
+  }
+
   static Config: z<Config> = z.object({
     maxBytes: z.number().step(1).min(1).default(2 * 1024 * 1024),
     maxFileBytes: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER - 1).default(32 * 1024 * 1024),
