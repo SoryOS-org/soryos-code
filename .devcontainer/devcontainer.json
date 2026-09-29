@@ -1,11 +1,12 @@
 {
-  "name": "SoryOS Code",
+  "name": "SoryOS Code (Node.js 24)",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bullseye",
   "forwardPorts": [3000, 8080, 5173],
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "remoteUser": "codespace",
   "containerUser": "codespace",
-  "runArgs": ["--cap-add=SYS_ADMIN"],
+  "runArgs": ["--user=codespace"],
+  "overrideCommand": false,
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash"
   },
