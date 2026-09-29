@@ -1,0 +1,26 @@
+{
+  "name": "SoryOS Code",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bullseye",
+  "forwardPorts": [3000, 8080, 5173],
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "remoteUser": "codespace",
+  "containerUser": "codespace",
+  "runArgs": ["--cap-add=SYS_ADMIN"],
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "extensions": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode"
+  ],
+  "postCreateCommand": "pnpm install",
+  "postStartCommand": "echo 'Codespace prêt !'",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
+    }
+  }
+}
