@@ -1,8 +1,8 @@
 {
-  "name": "SoryOS Code (Node.js 24)",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bullseye",
+  "name": "SoryOS Code (Ready to Use)",
+  "dockerFile": "Dockerfile",
   "forwardPorts": [3000, 8080, 5173],
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceFolder": "/workspaces/soryos-code",
   "remoteUser": "codespace",
   "containerUser": "codespace",
   "runArgs": ["--user=codespace"],
@@ -15,7 +15,7 @@
     "esbenp.prettier-vscode"
   ],
   "postCreateCommand": "pnpm install",
-  "postStartCommand": "echo 'Codespace prêt !'",
+  "postStartCommand": "echo '✅ Codespace prêt ! Tu peux commencer à coder.'",
   "customizations": {
     "vscode": {
       "settings": {
