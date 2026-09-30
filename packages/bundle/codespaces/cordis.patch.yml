@@ -1,0 +1,27 @@
+# The dsh-codespaces bundle patch: GitHub Codespaces environment services over
+# dsh-base. The remote filesystem/subprocess/sandbox providers are NOT mounted
+# here — they ride the SshConnection that ctx.codespacesConnection establishes
+# per workspace, inside the isolated agent preset (presets/codespaces.patch.yml).
+# Applied after dsh-base's insert.
+
+- insert:
+    # GitHub authorization flow (OAuth device flow + PAT); the token stays server-side.
+    - id: github-auth
+      name: '@deepseek-ai/dsh-github-auth'
+
+    # Codespaces lifecycle over the official GitHub REST API.
+    - id: codespaces
+      name: '@deepseek-ai/dsh-codespaces'
+
+    # Durable per-workspace Codespaces environment state.
+    - id: codespaces-registry
+      name: '@deepseek-ai/dsh-codespaces-registry'
+
+    # Environment connection lifecycle: provision, SSH bootstrap, remote harness
+    # launch, endpoint discovery, reconnection. Mounts the SshConnection dynamically.
+    - id: codespaces-connection
+      name: '@deepseek-ai/dsh-codespaces-connection'
+
+    # Browser surface over the Codespaces lifecycle (Remote namespace `codespaces`).
+    - id: codespaces-controller
+      name: '@deepseek-ai/dsh-api-codespaces-controller'

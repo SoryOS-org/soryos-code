@@ -5,13 +5,18 @@
  */
 
 import { Context } from '@deepseek-ai/cordis'
-import { constants as bufferConstants } from 'node:buffer'
 import { once } from 'node:events'
 import { watch } from 'chokidar'
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
-import { pathToFileURL } from 'node:url'
 import z from '@deepseek-ai/schemastery'
-import { FileSystem, FsError, FsVersion } from '@deepseek-ai/dsh-fs'
+import {
+  assertDiffBasisMaxBytes,
+  DEFAULT_DIFF_BASIS_MAX_BYTES,
+  FileSystem,
+  FsError,
+  FsVersion,
+  TargetLocks,
+} from '@deepseek-ai/dsh-fs'
 import type {
   FsDirEntry,
   FsEditOutcome,
@@ -53,11 +58,6 @@ export interface Config {
 }
 
 type ResolvedConfig = Required<Config>
-const DEFAULT_DIFF_BASIS_MAX_BYTES = 10 * 1024 * 1024
-const MAX_DIFF_BASIS_BYTES = Math.min(
-  bufferConstants.MAX_LENGTH,
-  bufferConstants.MAX_STRING_LENGTH,
-)
 
 /**
  * The host-filesystem backend. Reads resolve relative paths from {@link Config.cwd}
@@ -98,36 +98,16 @@ export class LocalFileSystem extends FileSystem {
   readonly config: ResolvedConfig
   /** Test hook forwarded to fsio for atomic-publication boundaries. */
   internals: FsIoInternals = {}
-  /** Per-targetKey tail promise: serializes mutating ops so the read→guard→write
-   * window can't interleave, making concurrent writes/edits deterministically
-   * ordered (one wins, the rest see the new version and reject as stale). */
-  private locks = new Map<string, Promise<unknown>>()
+  /** Per-target FIFO locks: the read→guard→write window cannot interleave, so
+   * concurrent writes/edits are deterministically ordered (one wins, the rest
+   * see the new version and reject as stale). */
+  private readonly locks = new TargetLocks()
 
   constructor(ctx: Context, config: Config) {
     super(ctx)
     const resolved = config as ResolvedConfig
-    if (!Number.isSafeInteger(resolved.diffBasisMaxBytes)
-      || resolved.diffBasisMaxBytes <= 0
-      || resolved.diffBasisMaxBytes > MAX_DIFF_BASIS_BYTES) {
-      throw new Error(`fs-local: diffBasisMaxBytes must be a positive safe integer no greater than ${MAX_DIFF_BASIS_BYTES}`)
-    }
+    assertDiffBasisMaxBytes(resolved.diffBasisMaxBytes, 'fs-local')
     this.config = resolved
-  }
-
-  /** Run `op` with exclusive access to `targetKey` (FIFO per key). */
-  private async withLock<T>(targetKey: string, op: () => Promise<T>): Promise<T> {
-    const prior = this.locks.get(targetKey) ?? Promise.resolve()
-    const run = prior.then(op, op)
-    // Keep the chain alive but swallow this op's result/throw for the *next* waiter.
-    const tail = run.then(() => undefined, () => undefined)
-    this.locks.set(targetKey, tail)
-    try {
-      return await run
-    } finally {
-      if (this.locks.get(targetKey) === tail) {
-        this.locks.delete(targetKey)
-      }
-    }
   }
 
   override async resolve(path: string, opts?: { cwd?: string; signal?: AbortSignal }): Promise<FsTarget> {
@@ -137,16 +117,8 @@ export class LocalFileSystem extends FileSystem {
     return { targetKey: local.targetKey, displayPath: local.displayPath }
   }
 
-  override processPath(target: FsTarget): string {
-    return String(target.targetKey)
-  }
-
   override processPathFromHostPath(hostPath: string): string | undefined {
     return isAbsolute(hostPath) ? resolve(hostPath) : undefined
-  }
-
-  override fileUrl(target: FsTarget): string {
-    return pathToFileURL(this.processPath(target)).href
   }
 
   override contains(parent: FsTarget, child: FsTarget): boolean {
@@ -205,7 +177,7 @@ export class LocalFileSystem extends FileSystem {
     expected?: FsWriteIntent,
     signal?: AbortSignal,
   ): Promise<FsWriteOutcome> {
-    return this.withLock(target.targetKey, async () => {
+    return this.locks.run(target.targetKey, async () => {
       const existing = await probe(target.targetKey)
       if (existing && existing.type !== 'file') {
         throw new FsError(`cannot write "${target.displayPath}": not a regular file`, 'FS_NOT_REGULAR_FILE')
@@ -260,7 +232,7 @@ export class LocalFileSystem extends FileSystem {
     expected?: { version: FsVersion },
     signal?: AbortSignal,
   ): Promise<FsEditOutcome> {
-    return this.withLock(target.targetKey, async () => {
+    return this.locks.run(target.targetKey, async () => {
       const existing = await probe(target.targetKey)
       // Stale guard before literal matching: an edit based on an old read reports
       // FS_STALE_VERSION, not FS_EDIT_NOT_FOUND/FS_AMBIGUOUS_EDIT against newer content.

@@ -1,0 +1,45 @@
+{
+  "name": "@deepseek-ai/dsh-codespaces-connection",
+  "description": "Codespaces environment connection lifecycle: provision, SSH bootstrap, remote DeepSeek Harness launch, endpoint discovery, and reconnection",
+  "version": "0.1.7-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/codespaces/codespaces-connection"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-codespaces": "workspace:*",
+    "@deepseek-ai/dsh-codespaces-registry": "workspace:*",
+    "@deepseek-ai/dsh-github-auth": "workspace:*",
+    "@deepseek-ai/dsh-ssh": "workspace:*",
+    "@deepseek-ai/dsh-workspace": "workspace:*"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-codespaces": "workspace:*",
+    "@deepseek-ai/dsh-codespaces-registry": "workspace:*",
+    "@deepseek-ai/dsh-github-auth": "workspace:*",
+    "@deepseek-ai/dsh-ssh": "workspace:*",
+    "@deepseek-ai/dsh-workspace": "workspace:*"
+  }
+}

@@ -801,6 +801,34 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-deepseek-account-platform -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-e2b -->
+<a id="deepseek-aidsh-e2b"></a>
+
+## `@deepseek-ai/dsh-e2b`
+
+- `source`: [`packages/e2b/e2b/src/index.ts:9`](../packages/e2b/e2b/src/index.ts)
+
+```ts config-catalog
+/** Deployment-owned E2B coordinates; no model argument selects these values. */
+export interface Config {
+  /** E2B API key for every control-plane call; absent reads apiKeyEnv from the process environment. */
+  apiKey?: string
+  /** Environment variable read for the E2B API key when apiKey is absent. */
+  apiKeyEnv: string
+  /** E2B control-plane domain; absent uses the SDK default domain. */
+  domain?: string
+  /** Sandbox template name or ID passed to every create. */
+  template?: string
+  /** Sandbox lifetime in milliseconds passed to create, connect, and resume, at most 86,400,000 (24 hours). */
+  timeoutMs?: number
+  /** Control-plane request deadline in milliseconds passed to every E2B API call. */
+  requestTimeoutMs?: number
+  /** Absolute sandbox directory created by initWorkspace. */
+  workspace: string
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-e2b -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-experimental-agent-team -->
 <a id="deepseek-aidsh-experimental-agent-team"></a>
 
@@ -1196,12 +1224,34 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-file-reference-local -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-fs-e2b -->
+<a id="deepseek-aidsh-fs-e2b"></a>
+
+## `@deepseek-ai/dsh-fs-e2b`
+
+- `inject`: `e2b`
+- `source`: [`packages/e2b/fs-e2b/src/index.ts:39`](../packages/e2b/fs-e2b/src/index.ts)
+
+```ts config-catalog
+/** Configuration for the E2B filesystem backend. */
+export interface Config {
+  /** Base directory for relative paths inside the sandbox. Defaults to the connection workspace. */
+  cwd?: string
+  /**
+   * Exclusive UTF-8 byte limit on each overwrite-diff side, capped by the
+   * runtime's safe allocation/decode maximum. Defaults to 10 MiB.
+   */
+  diffBasisMaxBytes?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-fs-e2b -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-fs-local -->
 <a id="deepseek-aidsh-fs-local"></a>
 
 ## `@deepseek-ai/dsh-fs-local`
 
-- `source`: [`packages/fs/fs-local/src/index.ts:45`](../packages/fs/fs-local/src/index.ts)
+- `source`: [`packages/fs/fs-local/src/index.ts:50`](../packages/fs/fs-local/src/index.ts)
 
 ```ts config-catalog
 /** Configuration for the local filesystem backend. */
@@ -3288,6 +3338,23 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-subagent-spawn-in-process -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-subprocess-e2b -->
+<a id="deepseek-aidsh-subprocess-e2b"></a>
+
+## `@deepseek-ai/dsh-subprocess-e2b`
+
+- `inject`: `e2b`
+- `source`: [`packages/e2b/subprocess-e2b/src/index.ts:29`](../packages/e2b/subprocess-e2b/src/index.ts)
+
+```ts config-catalog
+/** Configuration for the E2B subprocess adapter. */
+export interface Config {
+  /** Remote status/liveness poll cadence in milliseconds; each tick is one control-plane request. */
+  pollMs?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-subprocess-e2b -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-system-prompt -->
 <a id="deepseek-aidsh-system-prompt"></a>

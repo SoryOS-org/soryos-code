@@ -57,6 +57,9 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/ssh/fs-ssh': { kind: 'indirect', reason: 'The remote filesystem delegates model rendering to the existing filesystem consumers.' },
   'packages/ssh/subprocess-ssh': { kind: 'indirect', reason: 'The remote process provider delegates model rendering to Bash, terminal, LSP and ptc-runtime consumers.' },
   'packages/ssh/sandbox-ssh': { kind: 'indirect', reason: 'The remote confinement provider returns enforcement facts to its existing tool consumers.' },
+  'packages/e2b/e2b': { kind: 'none', reason: 'The connection owner serializes private sandbox lifecycle calls; consumers own all model-visible content.' },
+  'packages/e2b/fs-e2b': { kind: 'indirect', reason: 'The remote filesystem delegates model rendering to the existing filesystem consumers.' },
+  'packages/e2b/subprocess-e2b': { kind: 'indirect', reason: 'The remote process provider delegates model rendering to Bash, terminal, LSP and ptc-runtime consumers.' },
   'packages/browser-use/browser-use': { kind: 'none', reason: 'The registry only reserves a provider name; providers own browser tools and Session resources.' },
   'packages/experimental/browser-use-runtime': { kind: 'indirect', reason: 'Browser providers call the library to own resources and expose upstream MCP tools.' },
   'packages/computer-use/computer-use': { kind: 'none', reason: 'The registry only reserves provider names; providers own all model-facing tools and guidance.' },
@@ -227,6 +230,13 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/web/web-fetch-http': { kind: 'indirect', reason: 'The provider backend delegates model rendering to dsh-tool-web.' },
   'packages/web/web-search-exa': { kind: 'indirect', reason: 'The provider backend delegates model rendering to dsh-tool-web.' },
   'packages/workflow/workflow': { kind: 'indirect', reason: 'The service delegates parent and child model rendering to its consumer and engine.' },
+  'packages/api/codespaces-controller': { kind: 'none', reason: 'Remote API surface only; registers nothing model-facing.' },
+  'packages/bundle/codespaces': { kind: 'none', reason: 'Bundle patch layer only; registers nothing model-facing.' },
+  'packages/codespaces/codespaces': { kind: 'indirect', reason: 'The service delegates model rendering to SSH remote providers.' },
+  'packages/codespaces/codespaces-connection': { kind: 'indirect', reason: 'Connection lifecycle delegates model rendering to SSH providers.' },
+  'packages/codespaces/codespaces-registry': { kind: 'none', reason: 'Durable state storage only; registers nothing model-facing.' },
+  'packages/client/ui-codespaces': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
+  'packages/test-support/codespaces-fakes': { kind: 'none', reason: 'Test infrastructure; registers nothing model-facing.' },
 }
 
 interface Failure {

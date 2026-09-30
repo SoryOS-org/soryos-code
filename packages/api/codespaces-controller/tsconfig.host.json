@@ -1,0 +1,39 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "composite": true,
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo"
+  },
+  "files": [
+    "src/index.ts",
+    "src/types.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../../../vendor/schemastery"
+    },
+    {
+      "path": "../../credentials/github-auth"
+    },
+    {
+      "path": "../../codespaces/codespaces"
+    },
+    {
+      "path": "../../codespaces/codespaces-connection"
+    },
+    {
+      "path": "../../codespaces/codespaces-registry"
+    },
+    {
+      "path": "../../typert/protocol"
+    },
+    {
+      "path": "../../workspace/workspace"
+    }
+  ]
+}

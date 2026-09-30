@@ -1,0 +1,21 @@
+{
+  "name": "SoryCode",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "upgradePackages": false
+    }
+  },
+  "forwardPorts": [3080],
+  "portsAttributes": {
+    "3080": {
+      "label": "DeepSeek Harness",
+      "onAutoForward": "notify",
+      "visibility": "private"
+    }
+  },
+  "postCreateCommand": "npm install -g @deepseek-ai/dsh",
+  "remoteUser": "node"
+}

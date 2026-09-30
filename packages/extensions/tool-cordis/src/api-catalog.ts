@@ -979,6 +979,55 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'e2b',
+    summary: 'One E2B connection: it serializes create, connect, pause, resume, and destroy, and drops local ownership at disposal without killing the remote sandbox.',
+    description: 'One E2B connection: it serializes create, connect, pause, resume, and destroy, and drops local ownership at disposal without killing the remote sandbox.',
+    methods: [
+      {
+        signature: 'status(): E2bStatus',
+        description: 'Local lifecycle snapshot.',
+        parameters: [],
+        returns: 'state, the owned sandbox ID when one is owned, and the last failure message.',
+      },
+      {
+        signature: 'async create(signal?: AbortSignal): Promise<Sandbox>',
+        description: 'Create a new sandbox and own it until destroy.',
+        parameters: [{ name: 'signal', description: 'cancels the control-plane request; a rejected create leaves this connection failed without a sandbox.' }],
+        returns: 'the running sandbox handle.',
+      },
+      {
+        signature: 'async connect(sandboxId: string, signal?: AbortSignal): Promise<Sandbox>',
+        description: 'Own an existing sandbox by ID; a paused sandbox resumes to running.',
+        parameters: [{ name: 'sandboxId', description: 'ID reported by a previous create or status.' }, { name: 'signal', description: 'cancels the control-plane request; a rejected connect leaves this connection failed without a sandbox.' }],
+        returns: 'the running sandbox handle.',
+      },
+      {
+        signature: 'async pause(signal?: AbortSignal): Promise<void>',
+        description: 'Pause the owned sandbox, keeping its filesystem and memory for a later resume.',
+        parameters: [{ name: 'signal', description: 'cancels the control-plane request; a rejected pause keeps the current state and records the failure.' }],
+        returns: 'a promise that settles once E2B reports the pause settled.',
+      },
+      {
+        signature: 'async resume(signal?: AbortSignal): Promise<void>',
+        description: 'Reconnect and resume the owned paused sandbox to running; a ready sandbox is a no-op.',
+        parameters: [{ name: 'signal', description: 'cancels the control-plane request; a rejected resume keeps the current state and records the failure.' }],
+        returns: 'a promise that settles once E2B reports the sandbox running.',
+      },
+      {
+        signature: 'async destroy(signal?: AbortSignal): Promise<void>',
+        description: 'Kill the owned sandbox and release it; a sandbox E2B no longer reports is still released.',
+        parameters: [{ name: 'signal', description: 'cancels the control-plane request; a rejected kill keeps the sandbox owned and records the failure.' }],
+        returns: 'a promise that settles once the local handle is released.',
+      },
+      {
+        signature: 'async initWorkspace(signal?: AbortSignal): Promise<void>',
+        description: 'Create the configured workspace directory in the running sandbox; an existing directory is kept.',
+        parameters: [{ name: 'signal', description: 'cancels the filesystem request; a rejected call keeps the connection state unchanged and records the failure.' }],
+        returns: 'a promise that settles once the directory exists.',
+      },
+    ],
+  },
+  {
     key: 'fileReferences',
     summary: 'Host capability for cancellable file-reference discovery.',
     description: 'Host capability for cancellable file-reference discovery.',
@@ -1052,8 +1101,8 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the stable target; the same file yields the same `targetKey`.',
       },
       {
-        signature: 'abstract processPath(target: FsTarget): string',
-        description: 'Return the canonical absolute path a subprocess in this filesystem\'s execution world can open. The path is deliberately separate from FsTarget.targetKey: consumers may pass this value to another OS capability, but must continue treating the target key as opaque.',
+        signature: 'processPath(target: FsTarget): string',
+        description: 'Return the canonical absolute path a subprocess in this filesystem\'s execution world can open. The path is deliberately separate from FsTarget.targetKey: consumers may pass this value to another OS capability, but must continue treating the target key as opaque. The default treats the target key itself as that path; a backend whose keys are not process paths overrides it.',
         parameters: [{ name: 'target', description: 'the resolved target whose process path is required.' }],
         returns: 'an absolute path in the backend\'s execution world.',
       },
@@ -1064,14 +1113,14 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the process path for the same file, or undefined when this execution world cannot read that host file.',
       },
       {
-        signature: 'abstract fileUrl(target: FsTarget): string',
-        description: 'Return the canonical `file:` URI for a target in this filesystem\'s execution world. Backends own URI encoding because the host platform may differ from the execution platform.',
+        signature: 'fileUrl(target: FsTarget): string',
+        description: 'Return the canonical `file:` URI for a target in this filesystem\'s execution world. Backends own URI encoding because the host platform may differ from the execution platform; the default derives the URI from processPath.',
         parameters: [{ name: 'target', description: 'the resolved target to encode.' }],
         returns: 'the target\'s canonical file URI.',
       },
       {
-        signature: 'abstract contains(parent: FsTarget, child: FsTarget): boolean',
-        description: 'Test canonical containment without exposing or parsing backend target keys. Both targets must come from this provider.',
+        signature: 'contains(parent: FsTarget, child: FsTarget): boolean',
+        description: 'Test canonical containment without exposing or parsing backend target keys. Both targets must come from this provider. The default compares POSIX paths, the spelling remote and sandbox execution worlds adopt; a platform-specific backend overrides it.',
         parameters: [{ name: 'parent', description: 'canonical directory target.' }, { name: 'child', description: 'canonical candidate target.' }],
         returns: 'true when `child` is `parent` or a descendant of it.',
       },
@@ -5060,6 +5109,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'DynamicCordisRunRequest',
     declaration: 'export interface DynamicCordisRunRequest {\n    requestId: ApprovalRequestId;\n    agentId: SessionId;\n    pluginId: CordisDynamicPluginId;\n    packageId: CordisDynamicPackageId;\n    mode: CordisDynamicRunMode;\n    name: string;\n    purpose: string;\n    requiresApproval: boolean;\n}',
+  },
+  {
+    name: 'E2bState',
+    declaration: 'export type E2bState = \'absent\' | \'starting\' | \'ready\' | \'paused\' | \'failed\';',
+  },
+  {
+    name: 'E2bStatus',
+    declaration: 'export interface E2bStatus {\n    state: E2bState;\n    sandboxId?: string;\n    error?: string;\n}',
   },
   {
     name: 'EditGoalRequest',

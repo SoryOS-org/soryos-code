@@ -29,6 +29,8 @@ export const ENV_OVERRIDES = {
   TERM: 'dumb',
   PAGER: 'cat',
   GIT_PAGER: 'cat',
+  // Phase 9 / interface : indicateur visuel pour distinguer E2B du local dans le terminal.
+  DSH_E2B_MODE: 'e2b',
 } as const
 
 /** Default SIGTERM→SIGKILL grace period (the `graceMs` config; matches OpenCode's 3s). */

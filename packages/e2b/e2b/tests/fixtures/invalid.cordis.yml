@@ -1,0 +1,6 @@
+# Invalid configuration under test: timeoutMs is not a number, so the row must not activate.
+- id: e2b
+  name: '@deepseek-ai/dsh-e2b'
+  config:
+    workspace: /workspace/e2b
+    timeoutMs: soon

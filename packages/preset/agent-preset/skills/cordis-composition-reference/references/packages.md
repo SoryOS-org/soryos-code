@@ -172,6 +172,14 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 |---|---|---|
 | `@deepseek-ai/dsh-office-to-pdf` | yes | Shared Office-to-PDF conversion with bounded queues and caching |
 
+## e2b
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-e2b` | yes | E2B sandbox connection and lifecycle owner |
+| `@deepseek-ai/dsh-fs-e2b` | yes | Filesystem provider over the E2B sandbox workspace |
+| `@deepseek-ai/dsh-subprocess-e2b` | yes | E2B subprocess implementation for DeepSeek Harness |
+
 ## experimental
 
 | Package | Config | Description |

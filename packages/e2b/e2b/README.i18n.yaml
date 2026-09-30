@@ -1,0 +1,55 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/e2b/e2b/README.md
+/:
+  en: 974771629ccebb20
+  zh: b76d627cf9467c66
+/deepseek-ai-dsh-e2b:
+  en: b62c785c6254b59d
+  zh: 3dd584a16936ffd0
+/deepseek-ai-dsh-e2b/summary:
+  en: 48922646fe3a7618
+  zh: 5bca8c723e69334b
+/deepseek-ai-dsh-e2b/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 09388d293f9be9cb
+/deepseek-ai-dsh-e2b/use-this-package:
+  en: cd134c9532f6c164
+  zh: 1fa769a92d40a17c
+/deepseek-ai-dsh-e2b/use-this-package/when-to-use-it:
+  en: 2769b8b9fe72ec7d
+  zh: 59187d463110ffc7
+/deepseek-ai-dsh-e2b/use-this-package/set-up-the-connection:
+  en: 96ff83ceff82f8fc
+  zh: 2139998ea487eb70
+/deepseek-ai-dsh-e2b/use-this-package/configure-the-connection-from-settings:
+  en: 112b195856cc338a
+  zh: 40751f863b005df0
+/deepseek-ai-dsh-e2b/use-this-package/drive-the-lifecycle:
+  en: 101a7242529d9772
+  zh: 45d1b17107c6a58d
+/deepseek-ai-dsh-e2b/understand-the-implementation:
+  en: 63a7a4437a72e168
+  zh: 22a82836013ea632
+/deepseek-ai-dsh-e2b/understand-the-implementation/design:
+  en: aa397d61fe61a74c
+  zh: a09ec5715d3b170d
+/deepseek-ai-dsh-e2b/understand-the-implementation/source-map:
+  en: f8d85944d0536038
+  zh: 44a047ba3be4a62b
+/deepseek-ai-dsh-e2b/further-exploration:
+  en: 91458edd9a543f48
+  zh: f2187481fa92b088
+/deepseek-ai-dsh-e2b/model-experience:
+  en: a598eef00045b09c
+  zh: fbee1cf56a48d0ac
+/deepseek-ai-dsh-e2b/model-experience/kv-cache-effect:
+  en: e1f1919477050e9c
+  zh: 59047c9fe15f6299
+/deepseek-ai-dsh-e2b/known-limitations-and-deferred-work:
+  en: af70740108073c13
+  zh: 9820171c02f5431c
+/deepseek-ai-dsh-e2b/known-limitations-and-deferred-work/dev-note:
+  en: d0ca2c37a9650ee7
+  zh: 85b92574b7ac9e5b

@@ -1,4 +1,240 @@
-# AGENT.md — Intégration E2B dans SoryOS-IA
+# SoryCode Agent Development Guide
+
+Statut : Phases 1 à 13 terminées (audit, documentation, authentication GitHub, API Codespaces, persistance, devcontainer, runtime Harness, endpoint discovery, remote workspace, reconnexion, UI, tests, documentation finale). Le journal historique de la mission E2B (SoryOS-IA) est conservé en annexe à la fin de ce fichier.
+
+---
+
+## Mission Codespaces — État d'implémentation
+
+### Architecture
+
+```text
+SoryCode (fork DeepSeek Harness)
+  ↓ ctx.remote.codespaces (namespace Remote, packages/api/codespaces-controller)
+CodespacesController
+  ↓ ctx.codespacesConnection (packages/codespaces/codespaces-connection)
+CodespaceConnection
+  ├── ctx.codespaces (packages/codespaces/codespaces) — API GitHub REST
+  ├── ctx.codespacesRegistry (packages/codespaces/codespaces-registry) — persistance par workspace
+  └── SshConnection (packages/ssh/ssh) — montée dynamique à la connexion
+       ↓ SSH (via gh codespace ssh --config)
+       ↓ fs-ssh / subprocess-ssh / sandbox-ssh (preset agent isolé, realm workspace)
+       ↓ dsh web --port 3080 --no-open --host 127.0.0.1 (dans le codespace)
+       ↓ https://CODESPACENAME-3080.app.github.dev (port forwarding GitHub)
+```
+
+- **Bundle** : `@deepseek-ai/dsh-codespaces` (`packages/bundle/codespaces`) — services + preset agent `codespaces` (realm `isolate`, workspaceRoot `/workspaces`).
+- **Providers distants** : la famille SSH existante (`fs-ssh`, `subprocess-ssh`, `sandbox-ssh`) montée dans le realm isolé du preset — réutilisation maximale, zéro provider Codespaces-specific pour FS/processes.
+- **UI** : `@deepseek-ai/dsh-client-ui-codespaces` (`packages/client/ui-codespaces`) — panneau de configuration + contrôles de lifecycle + flow d'autorization GitHub.
+
+### Fichiers créés
+
+| Package | Rôle |
+|---|---|
+| `packages/credentials/github-auth` | Flow OAuth device flow + PAT via `ctx.authorization` ; `ctx.github.resolveToken()` |
+| `packages/codespaces/codespaces` | `ctx.codespaces` — cycle de vie Codespace (create/get/list/start/stop/remove), validation repo/branche/machine, devcontainer |
+| `packages/codespaces/codespaces-registry` | `ctx.codespacesRegistry` — état environnement par workspace (domaine storage `codespaces`) |
+| `packages/codespaces/codespaces-connection` | `ctx.codespacesConnection` — provision, bootstrap SSH, lancement dsh, endpoint, reconnexion |
+| `packages/api/codespaces-controller` | `ctx.remote.codespaces` — surface navigateur |
+| `packages/bundle/codespaces` | Bundle de composition + preset agent |
+| `packages/client/ui-codespaces` | Panneau UI React |
+| `packages/test-support/codespaces-fakes` | Fake GitHub API + fake Harness runtime (tests uniquement) |
+| `.devcontainer/devcontainer.json` | Template devcontainer (Node 22, sshd, port 3080, dsh) |
+
+### GitHub Authentication
+
+- **OAuth device flow** (pas de secret client) : `POST /login/device/code` → notice (URL + code) → poll `POST /login/oauth/access_token` → commit `GrantRecord` via `ctx.credentials`.
+- **PAT** (fallback) : prompt secret → vérification `GET /user` → commit.
+- Le token reste **côté serveur** (`$DSH_HOME/.credentials.yaml`) ; le frontend ne le reçoit jamais.
+- Scopes minimaux : `codespace` (+ `read:user`).
+
+### Codespaces Lifecycle
+
+`none → creating → starting → started → bootstrapping → harness-starting → ready → connected` puis `stopping → stopped` / `error → reconnecting → connected`. L'état local est une projection ; l'état autoritaire est GitHub (re-lu à chaque transition). Reconnect : re-lire le codespace → vérifier le runtime → reconnecter ; recréation uniquement si GitHub rapporte le codespace supprimé.
+
+### DeepSeek Harness Integration
+
+- Lancement dans le codespace : `dsh web --port 3080 --no-open --host 127.0.0.1` (dsh installé par le devcontainer).
+- Détection du port : parse de l'URL de launch `http://127.0.0.1:<port>/?token=…` dans stdout.
+- Endpoint : `gh codespace ports list --json remoteUrl,number` ; fallback `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN` lu dans le codespace.
+- Le runtime distant est un `dsh` complet (même codebase) : agent, sessions, tools, Web UI tournent dans le codespace.
+
+### Remote Filesystem / Terminal
+
+- Providers SSH existants montés dans le realm isolé du preset `codespaces` : le terminal UI (`terminal-controller` → `agent.ctx.subprocess`) et l'explorateur (`workspace-files` → `ctx.fs`) pointent vers le codespace automatiquement.
+- `sandboxPolicy.workspaceRoot = '/workspaces'` (chemin dans le codespace, pas `process.cwd()` hôte).
+
+### Security
+
+- Token GitHub jamais dans le frontend, les logs, ou une URL ; stockage via `ctx.credentials`.
+- Validation des URLs de workspace (domaine `*.app.github.dev` + nom du codespace provisionné) — anti-SSRF.
+- `redirect: 'error'` sur toutes les requêtes avec credentials.
+- Streams SSH authentifiés par capability (pattern `stream-security.ts` existant).
+
+### Tests
+
+| Suite | Tests | Statut |
+|---|---|---|
+| `packages/credentials/github-auth` | 9 | PASS |
+| `packages/codespaces/codespaces` | 17 | PASS |
+| `packages/codespaces/codespaces-registry` | 5 | PASS |
+| `packages/codespaces/codespaces-connection` | 9 | PASS |
+| `packages/api/codespaces-controller` | 10 | PASS |
+| `packages/bundle/codespaces` (chargement Loader réel) | 2 | PASS |
+| `packages/test-support/codespaces-fakes` (fake GitHub API + fake Harness) | 6 | PASS |
+| `packages/codespaces/codespaces-connection/tests/codespaces.e2e.ts` | 1 | SKIP (auto-skip sans `SORYCODE_GITHUB_TOKEN` + `SORYCODE_E2E_REPOSITORY`) |
+
+Gates : `tsc -b tsconfig.host.json` PASS, `tsc -b tsconfig.client.json` PASS, `oxlint` PASS, `verify-cordis-config` PASS (le bundle codespaces ; les erreurs restantes du bundle base sont pré-existantes — packages E2B retirés en 2026-09-11).
+
+### Variables d'environnement nécessaires
+
+| Variable | Rôle |
+|---|---|
+| `SORYCODE_GITHUB_TOKEN` | Token GitHub pour l'e2e réel (scope `codespace`) |
+| `SORYCODE_E2E_REPOSITORY` | `owner/repo` du dépôt de test e2e |
+| `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN` | Domaine de forwarding (lu dans le codespace, jamais hardcodé) |
+
+### Configuration GitHub nécessaire
+
+- OAuth App GitHub avec le scope `codespace` (client_id configurable via le config du plugin `github-auth`), OU
+- PAT classic avec le scope `codespace`, OU
+- fine-grained PAT avec permissions Codespaces en lecture/écriture sur les repositories ciblés.
+
+### Limitations restantes
+
+- Le transport SSH dépend de `gh codespace ssh` (CLI GitHub) pour la génération de la config OpenSSH et la gestion des clés.
+- `--host 0.0.0.0` est rejeté par la source `dsh` actuelle : le runtime distant reste sur `127.0.0.1` dans le codespace, exposé via le forwarding GitHub officiel.
+- Les processus distants ne survivent pas à un arrêt/suppression du codespace (limitation GitHub, pas contournable).
+- Le preset agent `codespaces` est monté par le bundle ; la sélection automatique du preset par workspace (quand l'environnement est configuré) reste à brancher dans le `agent-preset-registry`.
+- Le build complet (`pnpm run build`) OOM dans cet environnement (generator typert) — les artifacts typert du controller ont été générés manuellement et seront régénérés au build CI.
+
+### Prochaine étape
+
+Phase Sandbox (E2B) — non développée dans cette mission, conformément à la consigne.
+
+SoryCode est le fork `SoryOS-org/soryos-code` de **DeepSeek Harness** (`deepseek-harness`). Le runtime agent est DeepSeek Harness (`dsh`) ; OpenCode (`etudie-extraire/opencode`) est un sujet d'étude hors périmètre, pas une dépendance.
+
+## Architecture
+
+- **Monorepo pnpm + Cordis** : tout est plugin ; composition par profils (`web`, `headless`, `sdk`, `sdk-minimal`, `acp`) empilant des bundles (`dsh-base`, `dsh-web-app`, …) via `cordis.patch.yml` (une ligne = plugin + `config` validé). Référence : `docs/architecture.md`.
+- **Capability seams** (`docs/capability-seams.md`) : Service Definition / Service Provider / Consumer. Séams exploités par cette intégration :
+  | Séam | Service | Rôle |
+  |---|---|---|
+  | `ctx.fs` | `FileSystem` (`packages/fs/fs`) | Identité de cibles, lectures, écritures atomiques |
+  | `ctx.subprocess` | `SubprocessRuntime` (`packages/subprocess/subprocess`) | Processus, PTY, terminaux |
+  | `ctx.shell` | `ShellExecutor` (`packages/shell/shell`) | `resolve(request) → spec` puis `execute(spec)` |
+  | `ctx.sandbox` | `SandboxProvider` (`packages/sandbox/sandbox`) | Confinement same-world |
+  | `ctx.credentials` | `CredentialProvider` (`packages/credentials/credentials`) | Références d'env + records (`ApiKeyRecord`, `GrantRecord`) |
+  | `ctx.authorization` | `AuthorizationService` (`packages/credentials/authorization`) | Flows OAuth/device interactifs |
+  | `ctx.workspace` | Workspace registry (`packages/workspace/workspace`) | Workspaces persistés (storage domain) |
+  | `ctx.webServer` | `WebServer` (`packages/host/webserver`) | Routes HTTP + upgrades WebSocket |
+  | `ctx.remote` | Typert Remote (`packages/api/gateway`) | Dispatch Remote navigateur (WebSocket mux `/api/remote.mux`) |
+- **Invariant central** : `ctx.fs` + `ctx.subprocess` forment un seul « execution world » ; Bash, PTY, LSP et sous-agents suivent automatiquement (`docs/architecture.md`).
+- **Famille SSH = template remote** : `packages/ssh/ssh` (`SshConnection` : connexion OpenSSH + helper distant JSON-RPC + streams authentifiés), `fs-ssh`, `subprocess-ssh`, `sandbox-ssh`. Non montée par défaut (opt-in). C'est la base de réutilisation pour Codespaces.
+- **UI backend-agnostic** : un seul terminal (`ui-sidebar-terminal` → `terminal-controller` → `agent.ctx.subprocess`) et un seul explorateur (`ui-sidebar-files` → `workspace-files` → `ctx.fs`). Échanger la row provider suffit : zéro changement client.
+
+## Environments
+
+Chaque workspace SoryCode utilise exactement un environnement d'exécution :
+
+```ts
+type EnvironmentKind = 'local' | 'codespaces' | 'sandbox'
+```
+
+- **local** (défaut) : providers locaux (`fs-local`, `subprocess-local`, `bash-local`, `sandbox-local`) montés par `bundle/base/cordis.patch.yml`.
+- **codespaces** (cette phase) : un Codespace GitHub provisionné, un runtime `dsh` distant dedans, providers distants par-dessus la connexion.
+- **sandbox** : préparé architecturalement (séam `ctx.sandbox`, note de retrait E2B en annexe) mais **non développé dans cette phase**.
+
+## Local Environment
+
+Comportement inchangé : `dsh` tourne sur la machine de l'utilisateur, `ctx.fs`/`ctx.subprocess` pointent vers le filesystem local, le terminal et l'explorateur agissent sur le cwd du workspace. Aucun code Codespaces ne s'active quand `kind = 'local'`.
+
+## GitHub Codespaces
+
+### APIs GitHub vérifiées (documentation officielle, `X-GitHub-Api-Version: 2026-03-10`)
+
+- Cycle de vie Codespace : `POST /user/codespaces` (create), `GET /user/codespaces` (list), `GET /user/codespaces/{codespace_name}` (get), `POST /user/codespaces/{codespace_name}/start`, `POST /user/codespaces/{codespace_name}/stop`, `DELETE /user/codespaces/{codespace_name}`.
+- Champs de création : `repository_id`, `ref`, `devcontainer_path`, `machine`, `idle_timeout_minutes`, `retention_period_minutes`, `display_name`, `location` (`EuropeWest`, `SoutheastAsia`, `UsEast`, `UsWest`).
+- Scope requis : `codespace` (OAuth App tokens et PAT classic). Headers : `Authorization: Bearer`, `Accept: application/vnd.github+json`.
+- Repo/branche : `GET /repos/{owner}/{repo}` et `GET /repos/{owner}/{repo}/branches/{branch}` pour validation avant création.
+
+### Transport SSH vers le Codespace
+
+- Le devcontainer par défaut inclut un serveur SSH ; sinon feature `ghcr.io/devcontainers/features/sshd:1` dans `devcontainer.json`.
+- `gh codespace ssh -c <name>` ouvre une session ; `gh codespace ssh --config` génère une config OpenSSH par codespace (host alias) réutilisable par `ssh` standard — c'est le pont vers `SshConnection` existant (`packages/ssh/ssh`).
+- GitHub crée automatiquement une paire de clés SSH locales ; aucune gestion de clé manuelle.
+
+### Runtime DeepSeek Harness dans le Codespace
+
+- Commande officielle actuelle : `npx @deepseek-ai/dsh web` (Node `^22.19.0 || >=24.0.0`). Web UI sur `http://127.0.0.1:3080` par défaut ; `--port <n>` explicite, `--no-open`, `--host` (la source actuelle rejette `0.0.0.0` → rester sur `127.0.0.1` + forwarding GitHub).
+- Lancement distant : via la connexion SSH (helper ou `gh codespace ssh`), capture stdout/stderr, détection du port réel (valeur de `--port` ou parse de l'URL `http://127.0.0.1:<port>/?token=…` imprimée par le CLI).
+
+### Exposition du serveur (port forwarding)
+
+- URL officielle : `https://CODESPACENAME-PORT.app.github.dev` (format depuis août 2023 ; ancien `preview.app.github.dev` obsolète). **Ne jamais hardcoder le domaine** : lire `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN` dans le codespace.
+- GitHub détecte automatiquement les URLs `http://localhost:PORT` affichées sur stdout et forwarde le port.
+- Validation : toute URL de workspace doit être associée au Codespace provisionné (whitelist par `codespaceName`) — anti-SSRF.
+
+## DeepSeek Harness
+
+- CLI `dsh` : lanceur de profils (`apps/cli`) ; `dsh web` = alias `--profile web` ; bundles résolus depuis l'installation puis le profil.
+- Le runtime distant dans le Codespace est un `dsh` **complet** (même codebase, même version) : l'agent, les sessions, les tools et la Web UI tournent dans le Codespace ; SoryCode local ne fait que transporter FS/terminal/events.
+- Reconnexion : la metadata de session survit (log append-only persisté) ; le processus distant ne survit pas à un arrêt du Codespace — le lifecycle distingue `session metadata` et `process state`.
+
+## Environment Lifecycle
+
+```text
+NONE → CREATING → STARTING → STARTED → BOOTSTRAPPING → HARNESS_STARTING → READY → CONNECTED
+CONNECTED → STOPPING → STOPPED        (STOPPED → STARTING → …)
+CONNECTED → ERROR → RECONNECTING → CONNECTED
+```
+
+- L'état local est une projection ; l'état autoritaire est interrogé à chaque transition (`GET /user/codespaces/{name}`).
+- Reconnect : retrouver le Codespace par `codespaceName` persisté → vérifier son état GitHub → vérifier le runtime → reconnecter ; recréer uniquement si le Codespace est supprimé.
+- Après un restart, les processus distants sont considérés perdus (pas de promesse de survie).
+
+## Authentication
+
+- **GitHub OAuth device flow** (pas de secret client) enregistré via `ctx.authorization.registerFlow({ key: credentialKey('github', 'codespaces'), … })` ; le token est commité dans `ctx.credentials` comme `GrantRecord` (payload opaque propriétaire).
+- Le token reste **côté serveur** : le frontend ne reçoit jamais le token ; toutes les opérations GitHub passent par l'API SoryCode.
+- Scopes minimaux : `codespace` (+ `read:user` pour l'identité). Les repos privés exigent en plus l'accès repo (OAuth `repo` ou fine-grained PAT avec accès au repository).
+- Alternative : fine-grained PAT (permissions Codespaces en lecture/écriture sur les repositories ciblés) — même seam, `methods: [{ id: 'pat' }]`.
+
+## Remote Workspace
+
+- Providers : la famille SSH existante (`fs-ssh`, `subprocess-ssh`, `sandbox-ssh`) montée sur une `SshConnection` dont le host est l'alias OpenSSH du Codespace. Aucun provider Codespaces-specific pour FS/processes — réutilisation maximale.
+- Le terminal UI et l'explorateur de fichiers ne changent pas : ils lisent `agent.ctx.subprocess` / `ctx.fs`, qui pointent vers le Codespace.
+- `sandboxPolicy.workspaceRoot` devient un chemin **dans** le Codespace (config validée, pas `process.cwd()` hôte).
+
+## Security
+
+- Token GitHub : jamais hardcodé, jamais loggé, jamais dans une URL, jamais dans le frontend ; stockage via `ctx.credentials` (fichier `$DSH_HOME/.credentials.yaml` chiffré au repos par le provider local).
+- SSRF : validation stricte des URLs de workspace (domaine `*.app.github.dev` + nom du Codespace provisionné) ; un endpoint arbitraire fourni par l'utilisateur ne peut pas transformer SoryCode en proxy.
+- Transport : HTTPS via forwarding GitHub ; streams SSH authentifiés par capability (pattern `stream-security.ts` existant).
+- CORS : la fence `trusted-host` existante (`ctx.webRuntime.trustedHosts`) s'applique aux URLs de Codespaces.
+- Logs structurés : `codespace.create.started/completed`, `harness.start.started`, `harness.ready`, `workspace.connect.*`, `codespace.error` — jamais de secrets.
+
+## Testing
+
+- **Unit** (vitest, `tests/*.spec.ts` au niveau package) : providers testés avec un `ctx.plugin()` hand-built et un wire mock (pattern `packages/ssh/fs-ssh/tests/provider.spec.ts`).
+- **Integration** : fake serveur GitHub API (create/get/list/start/stop/delete) + fake runtime Harness (`GET /health`, terminal, filesystem, events) — mocks réservés aux tests, jamais en production.
+- **E2E réel** : script préparé (GitHub account + test repo + Codespace + SoryCode + dsh) ; auto-skip sans `DEEPSEEK_API_KEY`/token GitHub, comme `test:e2e`.
+- Gates : `pnpm run test`, `pnpm run typecheck`, `pnpm run lint`, `pnpm run build` avant tout push.
+
+## Troubleshooting
+
+(Complété en Phase 13 — documentation finale.)
+
+## Known Limitations
+
+- Phase Codespaces uniquement : le mode `sandbox` n'est pas développé dans cette phase.
+- Le transport SSH dépend de `gh codespace ssh` (CLI GitHub) pour la génération de la config OpenSSH et la gestion des clés.
+- `--host 0.0.0.0` est rejeté par la source `dsh` actuelle : le runtime distant reste sur `127.0.0.1` dans le Codespace, exposé via le forwarding GitHub officiel.
+- Les processus distants ne survivent pas à un arrêt/suppression du Codespace (limitation GitHub, pas contournable).
+
+---
+
+# Annexe — Journal historique : mission E2B (SoryOS-IA)
 
 Statut : Phases 1 à 4 et 6 terminées (audit + cartographie + sandbox E2B + `fs-e2b` + `subprocess-e2b` livrés avec docs et gates). Aucun code produit avant la cartographie, conformément à la mission.
 

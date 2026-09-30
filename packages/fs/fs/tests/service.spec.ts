@@ -26,11 +26,6 @@ class FakeFileSystem extends FileSystem {
   override async resolve(path: string): Promise<FsTarget> {
     return { targetKey: FsTargetKey(path), displayPath: path }
   }
-  override processPath(target: FsTarget): string { return String(target.targetKey) }
-  override fileUrl(target: FsTarget): string { return `file:///${encodeURIComponent(String(target.targetKey))}` }
-  override contains(parent: FsTarget, child: FsTarget): boolean {
-    return child.targetKey === parent.targetKey || String(child.targetKey).startsWith(`${parent.targetKey}/`)
-  }
   override async stat(target: FsTarget): Promise<FsInfo | undefined> {
     const content = this.files.get(target.targetKey)
     if (content === undefined) return undefined
@@ -96,6 +91,22 @@ describe('FileSystem provider seam', () => {
     const target = await fs.resolve('a.txt')
     expect((await fs.stat(target))?.type).toBe('file')
     expect(await fs.readText(target)).toBe('hi')
+  })
+
+  it('defaults execution-world identity to POSIX target keys', async () => {
+    const ctx = new Context()
+    await ctx.plugin(FakeFileSystem)
+    const fs = ctx.fs as FakeFileSystem
+    const parent = await fs.resolve('/work')
+    const sub = await fs.resolve('/work/sub')
+    const child = await fs.resolve('/work/sub/file.txt')
+    const sibling = await fs.resolve('/work/other')
+    expect(fs.processPath(child)).toBe('/work/sub/file.txt')
+    expect(fs.fileUrl(child)).toBe('file:///work/sub/file.txt')
+    expect(fs.contains(parent, parent)).toBe(true)
+    expect(fs.contains(parent, child)).toBe(true)
+    expect(fs.contains(sub, sibling)).toBe(false)
+    expect(fs.contains(sub, parent)).toBe(false)
   })
 
   it('throws when a second implementation is loaded (duplicate service)', async () => {

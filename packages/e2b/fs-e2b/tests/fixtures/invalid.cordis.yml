@@ -1,0 +1,7 @@
+# Invalid configuration under test: cwd is not a string, so the row must not activate.
+- id: e2b
+  name: '@deepseek-ai/dsh-e2b'
+- id: fs
+  name: '@deepseek-ai/dsh-fs-e2b'
+  config:
+    cwd: 42

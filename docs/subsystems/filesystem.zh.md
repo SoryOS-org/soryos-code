@@ -317,11 +317,13 @@ abstract resolve(path: string, opts?: { cwd?: string; signal?: AbortSignal }): P
  * Return the canonical absolute path a subprocess in this filesystem's
  * execution world can open. The path is deliberately separate from
  * {@link FsTarget.targetKey}: consumers may pass this value to another OS
- * capability, but must continue treating the target key as opaque.
+ * capability, but must continue treating the target key as opaque. The
+ * default treats the target key itself as that path; a backend whose keys
+ * are not process paths overrides it.
  * @param target - the resolved target whose process path is required.
  * @returns an absolute path in the backend's execution world.
  */
-abstract processPath(target: FsTarget): string
+processPath(target: FsTarget): string
 
 /**
  * Map an absolute path from the harness host into this filesystem's
@@ -336,20 +338,23 @@ processPathFromHostPath(hostPath: string): string | undefined
 /**
  * Return the canonical `file:` URI for a target in this filesystem's
  * execution world. Backends own URI encoding because the host platform may
- * differ from the execution platform.
+ * differ from the execution platform; the default derives the URI from
+ * {@link processPath}.
  * @param target - the resolved target to encode.
  * @returns the target's canonical file URI.
  */
-abstract fileUrl(target: FsTarget): string
+fileUrl(target: FsTarget): string
 
 /**
  * Test canonical containment without exposing or parsing backend target
- * keys. Both targets must come from this provider.
+ * keys. Both targets must come from this provider. The default compares
+ * POSIX paths, the spelling remote and sandbox execution worlds adopt; a
+ * platform-specific backend overrides it.
  * @param parent - canonical directory target.
  * @param child - canonical candidate target.
  * @returns true when `child` is `parent` or a descendant of it.
  */
-abstract contains(parent: FsTarget, child: FsTarget): boolean
+contains(parent: FsTarget, child: FsTarget): boolean
 
 /**
  * Return target metadata, or `undefined` when the target does not exist.

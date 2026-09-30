@@ -1,0 +1,7 @@
+# Package composition under test: the connection seam plus this package's own row.
+- id: e2b
+  name: '@deepseek-ai/dsh-e2b'
+- id: fs
+  name: '@deepseek-ai/dsh-fs-e2b'
+  config:
+    diffBasisMaxBytes: 4096

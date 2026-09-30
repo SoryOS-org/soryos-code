@@ -1,0 +1,7 @@
+# Invalid configuration under test: pollMs is not a number, so the row must not activate.
+- id: e2b
+  name: '@deepseek-ai/dsh-e2b'
+- id: subprocess
+  name: '@deepseek-ai/dsh-subprocess-e2b'
+  config:
+    pollMs: soon

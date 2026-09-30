@@ -1,0 +1,7 @@
+# Package composition under test: the package's own E2B row, resolved through Node self-resolution.
+- id: e2b
+  name: '@deepseek-ai/dsh-e2b'
+  config:
+    apiKey: yml-key
+    template: custom-template
+    workspace: /workspace/e2b

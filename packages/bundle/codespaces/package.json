@@ -1,0 +1,71 @@
+{
+  "name": "@deepseek-ai/dsh-codespaces",
+  "description": "The dsh-codespaces bundle: GitHub Codespaces environment services over dsh-base, plus the isolated agent preset mounting the SSH remote provider family",
+  "version": "0.1.7-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/bundle/codespaces"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./presets/*.patch.yml": "./presets/*.patch.yml",
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "cordis.patch.yml",
+    "presets/codespaces.patch.yml",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": [
+        "./cordis.patch.yml",
+        "./presets/codespaces.patch.yml"
+      ]
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-api-codespaces-controller": "workspace:*",
+    "@deepseek-ai/dsh-codespaces": "workspace:*",
+    "@deepseek-ai/dsh-codespaces-connection": "workspace:*",
+    "@deepseek-ai/dsh-codespaces-registry": "workspace:*",
+    "@deepseek-ai/dsh-github-auth": "workspace:*",
+    "@deepseek-ai/dsh-sandbox-policy": "workspace:*",
+    "@deepseek-ai/dsh-ssh": "workspace:*",
+    "@deepseek-ai/dsh-fs-ssh": "workspace:*",
+    "@deepseek-ai/dsh-subprocess-ssh": "workspace:*",
+    "@deepseek-ai/dsh-sandbox-ssh": "workspace:*",
+    "@deepseek-ai/dsh-bash-local": "workspace:*",
+    "@deepseek-ai/dsh-terminal-bash": "workspace:*"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-api-codespaces-controller": "workspace:*",
+    "@deepseek-ai/dsh-codespaces": "workspace:*",
+    "@deepseek-ai/dsh-codespaces-connection": "workspace:*",
+    "@deepseek-ai/dsh-codespaces-registry": "workspace:*",
+    "@deepseek-ai/dsh-github-auth": "workspace:*",
+    "@deepseek-ai/dsh-sandbox-policy": "workspace:*",
+    "@deepseek-ai/dsh-ssh": "workspace:*",
+    "@deepseek-ai/dsh-fs-ssh": "workspace:*",
+    "@deepseek-ai/dsh-subprocess-ssh": "workspace:*",
+    "@deepseek-ai/dsh-sandbox-ssh": "workspace:*",
+    "@deepseek-ai/dsh-bash-local": "workspace:*",
+    "@deepseek-ai/dsh-terminal-bash": "workspace:*"
+  }
+}

@@ -1,8 +1,9 @@
 /**
  * Filesystem Service Definition for one execution world. Backends own stable target
- * identity, process paths and file URIs, containment, text reads, decoding,
- * binary rejection, and atomic mutations. Read windows and
- * observed-state policy stay in consumer and policy plugins; `editText`
+ * identity, text reads, decoding, binary rejection, and atomic mutations; process
+ * paths, file URIs, and POSIX containment default here so backends whose target keys
+ * are execution-world paths inherit them. Read windows and
+ * observed-value policy stay in consumer and policy plugins; `editText`
  * remains here so version check, literal match, and rewrite share one critical
  * section.
  * @module @deepseek-ai/dsh-fs
@@ -10,6 +11,8 @@
 
 import { Context, Service } from '@deepseek-ai/cordis'
 import type { SandboxExecutionPolicy, SandboxMode } from '@deepseek-ai/dsh-sandbox'
+import { posix } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { FsError } from './types.ts'
 import type {
   FsDirEntry,
@@ -29,6 +32,27 @@ export {
   FsTargetKey,
   FsVersion,
 } from './types.ts'
+export {
+  assertDiffBasisMaxBytes,
+  DEFAULT_DIFF_BASIS_MAX_BYTES,
+  MAX_DIFF_BASIS_BYTES,
+} from './diff-basis.ts'
+export {
+  TargetLocks,
+} from './locks.ts'
+export {
+  BINARY_SAMPLE_BYTES,
+  applyLiteralEdit,
+  assertTextualBytes,
+  decodeUtf8Chunk,
+  decodeUtf8Text,
+  detectLineEndings,
+  normalizeLineEndings,
+  restoreLineEndings,
+} from './text.ts'
+export type {
+  LineEndings,
+} from './text.ts'
 export type {
   FsEditOutcome,
   FsEditRequest,
@@ -135,11 +159,15 @@ export abstract class FileSystem extends Service {
    * Return the canonical absolute path a subprocess in this filesystem's
    * execution world can open. The path is deliberately separate from
    * {@link FsTarget.targetKey}: consumers may pass this value to another OS
-   * capability, but must continue treating the target key as opaque.
+   * capability, but must continue treating the target key as opaque. The
+   * default treats the target key itself as that path; a backend whose keys
+   * are not process paths overrides it.
    * @param target - the resolved target whose process path is required.
    * @returns an absolute path in the backend's execution world.
    */
-  abstract processPath(target: FsTarget): string
+  processPath(target: FsTarget): string {
+    return String(target.targetKey)
+  }
 
   /**
    * Map an absolute path from the harness host into this filesystem's
@@ -157,20 +185,28 @@ export abstract class FileSystem extends Service {
   /**
    * Return the canonical `file:` URI for a target in this filesystem's
    * execution world. Backends own URI encoding because the host platform may
-   * differ from the execution platform.
+   * differ from the execution platform; the default derives the URI from
+   * {@link processPath}.
    * @param target - the resolved target to encode.
    * @returns the target's canonical file URI.
    */
-  abstract fileUrl(target: FsTarget): string
+  fileUrl(target: FsTarget): string {
+    return pathToFileURL(this.processPath(target)).href
+  }
 
   /**
    * Test canonical containment without exposing or parsing backend target
-   * keys. Both targets must come from this provider.
+   * keys. Both targets must come from this provider. The default compares
+   * POSIX paths, the spelling remote and sandbox execution worlds adopt; a
+   * platform-specific backend overrides it.
    * @param parent - canonical directory target.
    * @param child - canonical candidate target.
    * @returns true when `child` is `parent` or a descendant of it.
    */
-  abstract contains(parent: FsTarget, child: FsTarget): boolean
+  contains(parent: FsTarget, child: FsTarget): boolean {
+    const path = posix.relative(this.processPath(parent), this.processPath(child))
+    return path === '' || (!path.startsWith('../') && path !== '..' && !posix.isAbsolute(path))
+  }
 
   /**
    * Return target metadata, or `undefined` when the target does not exist.

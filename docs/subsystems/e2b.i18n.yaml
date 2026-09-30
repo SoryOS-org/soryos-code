@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for e2b.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/subsystems/e2b.md
+/e2b-sandbox-connection:
+  en: 1c2bc7228c4d9d5e
+  zh: f760e4f6c0e25614
+/e2b-sandbox-connection/configuration:
+  en: 6d6b64e55b53fb64
+  zh: 46c685718e9fc1d0
+/e2b-sandbox-connection/lifecycle:
+  en: bf3d3291e62d0e02
+  zh: 14f778ddd3046e38
+/e2b-sandbox-connection/connection-api:
+  en: 03fa97325cb53ae0
+  zh: ed3215f6d42aa0ac
+/e2b-sandbox-connection/filesystem-provider:
+  en: b7df0f8e763ac1d9
+  zh: 3e0646e342e24bd1
+/e2b-sandbox-connection/subprocess-provider:
+  en: 9388c9da5aab6163
+  zh: 121777ed062205e4

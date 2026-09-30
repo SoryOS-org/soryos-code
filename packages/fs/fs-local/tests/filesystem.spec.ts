@@ -34,7 +34,7 @@ afterEach(async () => {
 })
 
 function lockCount(localFs: LocalFileSystem): number {
-  return (localFs as unknown as { locks: Map<string, Promise<unknown>> }).locks.size
+  return (localFs as unknown as { locks: { tails: Map<string, unknown> } }).locks.tails.size
 }
 
 /** The version the backend currently reports for a resolved target. */

@@ -1,0 +1,29 @@
+{
+  "extends": "../../../tsconfig.base.client.json",
+  "composite": true,
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "tsBuildInfoFile": "lib/tsconfig.client.tsbuildinfo"
+  },
+  "files": [
+    "src/types.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../../credentials/github-auth"
+    },
+    {
+      "path": "../../codespaces/codespaces"
+    },
+    {
+      "path": "../../codespaces/codespaces-connection"
+    },
+    {
+      "path": "../../workspace/workspace"
+    }
+  ]
+}

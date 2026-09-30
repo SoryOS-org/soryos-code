@@ -147,9 +147,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ownerProps: [
       '/** Owner currency of finalized-assistant actions. */\nexport interface AssistantActionOwnerProps {\n  messageId: MessageId\n}',
     ],
-    ownerPropsReferences: [
-      'MessageId',
-    ],
+    ownerPropsReferences: [],
     standardProps: [
       'useResource: UseResource',
       'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
@@ -1139,7 +1137,6 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       '/** Message image group handed to the optional attachment presentation plugin. */\nexport interface MessageImagesOwnerProps {\n  /** Durable references or submission-echo previews in source order. */\n  images: readonly MessageImageSource[]\n  /** Session-authorized image URL loader for the durable arm. */\n  loadImage: MessageImageLoader\n  /** Horizontal placement inside the owning record. */\n  align: \'start\' | \'end\'\n  /** Force every image into the compact message-attachment tile size. */\n  compact?: boolean\n  /** Fixed, uncropped thumbnail for an attachment list row. */\n  thumbnail?: boolean\n}',
     ],
     ownerPropsReferences: [
-      'Message',
       'MessageImageLoader',
       'MessageImageSource',
     ],
@@ -1515,7 +1512,6 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       '/** Message image group handed to the optional attachment presentation plugin. */\nexport interface MessageImagesOwnerProps {\n  /** Durable references or submission-echo previews in source order. */\n  images: readonly MessageImageSource[]\n  /** Session-authorized image URL loader for the durable arm. */\n  loadImage: MessageImageLoader\n  /** Horizontal placement inside the owning record. */\n  align: \'start\' | \'end\'\n  /** Force every image into the compact message-attachment tile size. */\n  compact?: boolean\n  /** Fixed, uncropped thumbnail for an attachment list row. */\n  thumbnail?: boolean\n}',
     ],
     ownerPropsReferences: [
-      'Message',
       'MessageImageLoader',
       'MessageImageSource',
     ],
@@ -2075,6 +2071,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     declaredBy: 'an entry in \'main\' (client-ui-plugin-manager), so it exists while that entry is mounted',
     occupants: [
       'client-ui-settings-agent-loop AgentLoopCard id \'agent-loop\'',
+      'client-ui-settings-e2b E2bCard id \'e2b\'',
       'client-ui-settings-shell ShellCard id \'shell\'',
       'client-ui-settings-subagent SubagentCard id \'subagent\'',
       'client-ui-settings-web-search WebSearchCard id \'web-search\'',
@@ -2163,9 +2160,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       '/** Right column owner share: resolved normal geometry and opening eligibility. */\nexport interface RightbarOwnerProps {\n  /** Resolved normal panel width in px, not the saved preference; zero if it cannot fit. */\n  width: number\n  /** Current frame width in px. */\n  viewportWidth: number\n  /**\n   * Whether a normal right panel can retain 300px beside a 400px center.\n   * Before a narrow opening, includes the space from collapsing the left sidebar.\n   */\n  canShow: boolean\n}',
       '/** Identity of one open tab; distinct copies of one content share `contentId`, never `TabId`. */\nexport type TabId = Branded<\'TabId\'>',
     ],
-    ownerPropsReferences: [
-      'Branded',
-    ],
+    ownerPropsReferences: [],
     standardProps: [
       'useResource: UseResource',
       'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',

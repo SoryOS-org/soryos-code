@@ -1,6 +1,4 @@
 /** Filesystem provider preserving remote identities and helper-owned atomic mutations. */
-import { posix } from 'node:path'
-import { pathToFileURL } from 'node:url'
 import { FileSystem, FsError } from '@deepseek-ai/dsh-fs'
 import type { FsDirEntry, FsEditOutcome, FsEditRequest, FsErrorCode, FsInfo, FsPathInfo, FsTarget, FsVersion, FsWriteIntent, FsWriteOutcome } from '@deepseek-ai/dsh-fs'
 import type { SandboxExecutionPolicy, SandboxMode } from '@deepseek-ai/dsh-sandbox'
@@ -24,17 +22,6 @@ export class SshFileSystem extends FileSystem {
 
   override async resolve(path: string, opts?: { cwd?: string; signal?: AbortSignal }): Promise<FsTarget> {
     return await this.call('fs.resolve', { path, cwd: opts?.cwd }, targetSchema, opts?.signal) as FsTarget
-  }
-
-  override processPath(target: FsTarget): string { return String(target.targetKey) }
-
-  override fileUrl(target: FsTarget): string {
-    return pathToFileURL(this.processPath(target)).href
-  }
-
-  override contains(parent: FsTarget, child: FsTarget): boolean {
-    const path = posix.relative(this.processPath(parent), this.processPath(child))
-    return path === '' || (!path.startsWith('../') && path !== '..' && !posix.isAbsolute(path))
   }
 
   override async stat(target: FsTarget, signal?: AbortSignal): Promise<FsInfo | undefined> {

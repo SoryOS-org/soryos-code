@@ -1,0 +1,34 @@
+# Agent preset Codespaces : remote SSH providers isolated in one group.
+# Applied after the bundle patch; the session selects this preset via agent-preset
+# when the workspace carries a Codespaces environment configuration. The
+# SshConnection itself is mounted by ctx.codespacesConnection at connect time and
+# is visible here through realm inheritance.
+- insert:
+    - id: preset-codespaces
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: codespaces
+        name: GitHub Codespaces
+        description: Execute inside a GitHub Codespaces environment with remote filesystem, subprocess, and terminal over SSH.
+        order: 20
+        plugins:
+          - id: codespaces-group
+            name: cordis:group
+            group: true
+            isolate:
+              workspace: true
+            config:
+              - id: fs-ssh
+                name: '@deepseek-ai/dsh-fs-ssh'
+              - id: subprocess-ssh
+                name: '@deepseek-ai/dsh-subprocess-ssh'
+              - id: bash-local
+                name: '@deepseek-ai/dsh-bash-local'
+              - id: terminal-bash
+                name: '@deepseek-ai/dsh-terminal-bash'
+              - id: sandbox-policy
+                name: '@deepseek-ai/dsh-sandbox-policy'
+                config:
+                  workspaceRoot: '/workspaces'
+              - id: sandbox-ssh
+                name: '@deepseek-ai/dsh-sandbox-ssh'

@@ -2288,6 +2288,17 @@
       "projection": "public-api"
     },
     {
+      "doc": "docs/subsystems/e2b.md",
+      "symbol": "Config",
+      "source": "packages/e2b/e2b/src/index.ts"
+    },
+    {
+      "doc": "docs/subsystems/e2b.md",
+      "symbol": "E2bConnection",
+      "source": "packages/e2b/e2b/src/index.ts",
+      "projection": "public-api"
+    },
+    {
       "doc": "docs/subsystems/mcp.md",
       "symbol": "McpResourceRequest",
       "source": "packages/mcp/mcp-resources/src/index.ts"

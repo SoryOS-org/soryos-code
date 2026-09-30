@@ -414,6 +414,9 @@
     - id: ui-settings-web-search
       name: '@deepseek-ai/dsh-client-ui-settings-web-search'
 
+    - id: ui-settings-e2b
+      name: '@deepseek-ai/dsh-client-ui-settings-e2b'
+
     # Plan control: the composer plan seat over the plan projection + /plan channel.
     - id: ui-plan
       name: '@deepseek-ai/dsh-client-ui-plan'
@@ -552,6 +555,11 @@
 - id: tool-web
   disabled: true
 
+# The `e2b` preset carries its own permission policy inside the isolated
+# remote-sandbox group, so the host-plane row must give up the id.
+- id: sandbox-policy
+  disabled: true
+
 # The preset selection registry. The shipped preset declarations follow as
 # separate patch files under `presets/`, listed after this file in
 # `package.json` `dsh.bundle.patch`.
@@ -559,4 +567,4 @@
     - id: agent-preset-registry
       name: '@deepseek-ai/dsh-agent-preset-registry'
       config:
-        default: standard
+        default: e2b
